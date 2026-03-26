@@ -62,14 +62,66 @@ fastify.post('/api/analyze', async (request, reply) => {
     return reply.code(400).send({ error: '缺少磁磚圖片路徑' });
   }
 
+  let detectedColor = color;
+  
+  // 使用 OpenAI Vision 分析圖片顏色（如果沒有指定顏色）
+  if (!color && process.env.OPENAI_API_KEY) {
+    try {
+      const imageUrl = `http://localhost:3000${tilePath}`;
+      const visionResponse = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-4o-mini',
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Describe this tile main color in 2 Chinese words. Examples: 淺灰色, 米白色, 深棕色, 白色, 黑色, 藍色, 綠色. Just reply with the color name.' },
+              { type: 'image_url', image_url: { url: imageUrl } }
+            ]
+          }],
+          max_tokens: 20
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      const result = visionResponse.data.choices[0].message.content.trim();
+      // 嘗試匹配顏色選項
+      const colorMap = {
+        '淺灰': '淺灰', '淺灰色': '淺灰', 'light gray': '淺灰',
+        '深灰': '深灰', '深灰色': '深灰', 'dark gray': '深灰',
+        '米白': '米白', '米白色': '米白', 'beige': '米白',
+        '淺棕': '淺棕', '淺棕色': '淺棕', 'light brown': '淺棕',
+        '深棕': '深棕', '深棕色': '深棕', 'dark brown': '深棕',
+        '白': '白色', '白色': '白色', 'white': '白色',
+        '黑': '黑色', '黑色': '黑色', 'black': '黑色',
+        '藍': '藍色', '藍色': '藍色', 'blue': '藍色',
+        '綠': '綠色', '綠色': '綠色', 'green': '綠色'
+      };
+      
+      for (const [key, value] of Object.entries(colorMap)) {
+        if (result.includes(key)) {
+          detectedColor = value;
+          break;
+        }
+      }
+    } catch (e) {
+      console.log('顏色辨識失敗:', e.message);
+    }
+  }
+
   const features = {
-    pattern: detectPattern(color),
+    pattern: detectPattern(color || detectedColor),
     style: inferStyle(material),
-    mood: inferMood(color, material),
-    recommendedRooms: getRecommendedRooms(material)
+    mood: inferMood(color || detectedColor, material),
+    recommendedRooms: getRecommendedRooms(material),
+    detectedColor: detectedColor
   };
   
-  return { success: true, features, tileInfo: { width, height, color, material } };
+  return { success: true, features, tileInfo: { width, height, color: detectedColor, material } };
 });
 
 // 3. 生成場景模擬圖
@@ -85,6 +137,38 @@ fastify.post('/api/generate', async (request, reply) => {
     
     // === 主要方案：Replicate ===
     if (process.env.REPLICATE_API_TOKEN) {
+      // 使用 OpenAI Vision 分析圖片顏色
+      if (process.env.OPENAI_API_KEY && tilePath) {
+        try {
+          const imageUrl = `http://localhost:3000${tilePath}`;
+          const visionResponse = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+              model: 'gpt-4o-mini',
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Describe this tile in 2 words: what is the main color? Reply in Chinese. Examples: "淺灰色", "米白色", "深棕色"' },
+                  { type: 'image_url', image_url: { url: imageUrl } }
+                ]
+              }],
+              max_tokens: 50
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          const detectedColor = visionResponse.data.choices[0].message.content;
+          // 更新 features 中的顏色
+          features.detectedColor = detectedColor;
+        } catch (e) {
+          console.log('顏色辨識失敗:', e.message);
+        }
+      }
+      
       const versionId = 'c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e';
       
       const response = await axios.post(
@@ -143,11 +227,39 @@ fastify.post('/api/generate', async (request, reply) => {
   }
 });
 
-// 4. 搜尋相似場景（Demo）
+// 4. 搜尋相似場景
 fastify.post('/api/search-scenes', async (request, reply) => {
   const { color, material, roomType } = request.body;
   const keywords = buildSearchKeywords(color, material, roomType);
   
+  // Unsplash API
+  if (process.env.UNSPLASH_ACCESS_KEY) {
+    try {
+      const response = await axios.get(
+        'https://api.unsplash.com/search/photos',
+        {
+          params: { query: keywords, per_page: 6, orientation: 'landscape' },
+          headers: { 'Authorization': 'Client-ID ' + process.env.UNSPLASH_ACCESS_KEY }
+        }
+      );
+      
+      const images = response.data.results.map(photo => ({
+        id: photo.id,
+        thumbUrl: photo.urls.thumb,
+        regularUrl: photo.urls.regular,
+        fullUrl: photo.urls.full,
+        description: photo.description || photo.alt_description,
+        photographer: photo.user.name,
+        photographerUrl: photo.user.links.html
+      }));
+      
+      return { success: true, images, query: keywords, provider: 'unsplash' };
+    } catch (e) {
+      console.error('Unsplash 搜尋失敗:', e.message);
+    }
+  }
+  
+  // Demo 模式
   return {
     success: true,
     mode: 'demo',

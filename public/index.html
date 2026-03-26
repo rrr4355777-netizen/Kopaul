@@ -197,6 +197,7 @@
     <select id="langSelect" onchange="changeLanguage(this.value)">
       <option value="zh-TW">繁體中文</option>
       <option value="en">English</option>
+      <option value="my">မြန်မာ (Burmese)</option>
     </select>
   </div>
 
@@ -331,7 +332,8 @@
         uploadSuccess: '上傳成功！', uploading: '上傳中...',
         clickOrDrag: '點擊或拖曳圖片到此處',
         widthPlaceholder: '寬', heightPlaceholder: '高',
-        keywordSearch: '搜尋關鍵字:'
+        keywordSearch: '搜尋關鍵字:',
+        detectedColor: '偵測到顏色'
       },
       'en': {
         title: '🏠 Tile Scene Simulator',
@@ -352,6 +354,62 @@
         materialMosaic: 'Mosaic', materialConcrete: 'Concrete',
         analyzeBtn: '🔍 Analyze Tile',
         analyzeBtnLoading: 'Analyzing...',
+        generateTitle: '🎨 Generate Scene',
+        roomLabel: 'Room Type',
+        roomLiving: 'Living Room', roomBedroom: 'Bedroom', roomBathroom: 'Bathroom',
+        roomKitchen: 'Kitchen', roomDining: 'Dining Room', roomBalcony: 'Balcony',
+        generateBtn: '✨ Generate Scene',
+        generating: 'AI is generating scene...',
+        searchTitle: '🔎 Search Similar Scenes',
+        searchDesc: 'Search real scene images from Unsplash based on tile features',
+        searchBtn: '🔍 Search Similar Scenes',
+        searchLoading: 'Searching scene images...',
+        demoWarning: '⚠️ Demo Mode - Set UNSPLASH_ACCESS_KEY for real images',
+        success: '✅ Scene generated!',
+        pattern: 'Pattern', style: 'Style', mood: 'Mood', recommend: 'Recommended',
+        uploadSuccess: 'Upload success!', uploading: 'Uploading...',
+        clickOrDrag: 'Click or drag image here',
+        widthPlaceholder: 'Width', heightPlaceholder: 'Height',
+        keywordSearch: 'Search keyword:',
+        detectedColor: 'Detected color'
+      },
+      'my': {
+        title: '🏠 ကြေးမုံအန်စာပြင်ဆိုင်စနစ်',
+        subtitle: 'ကြေးမုံပုံတင်ပါက AI သည် အိမ်အလှဆင်မှုပြင်ဆိုင်စနစ်ကို ဖန်တီးပါပါမည်',
+        uploadTitle: '📤 ကြေးမုံပုံတင်ပါမည်',
+        uploadText: 'ဤနေရာသို့ ပုံကလစ်ဖ်သို့ ဆွဲယူပါမည်',
+        uploadHint: 'JPG, PNG, WEBP မှာယူပါပါမည်',
+        specTitle: '📐 ကြေးမုံအရွယ်အစား',
+        sizeLabel: 'အရွယ်အစား (cm)',
+        colorLabel: 'အရောင်',
+        materialLabel: 'ပစ္စည်း',
+        selectColor: 'အရောင်ရွေးပါမည်',
+        selectMaterial: 'ပစ္စည်းရွေးပါမည်',
+        colorLightGray: 'အပြားခရမ်း', colorDarkGray: 'အမည်းခရမ်း', colorBeige: 'အဝါစိမ်',
+        colorLightBrown: 'အမဲရင်း', colorDarkBrown: 'အမဲသန်း', colorWhite: 'အဖြူ', colorBlack: 'အမည်း', colorBlue: 'အပြာ', colorGreen: 'အစိမ်း',
+        materialTile: 'ကြေးမုံ', materialStone: 'ကျောက်', materialWood: 'သစ်သား', materialMosaic: 'မိုဆိုက်', materialConcrete: 'စွပ်ကျယ်',
+        analyzeBtn: '🔍 ကြေးမုံအစိတ်အပိုင်းကို ခွဲခြမ်းပါမည်',
+        analyzeBtnLoading: 'ခွဲခြမ်းဆွဲနေပါမည်...',
+        generateTitle: '🎨 ပြင်ဆိုင်စနစ်ဖန်တီးပါမည်',
+        roomLabel: 'အခန်းအမျိုးအစား',
+        roomLiving: 'ဧည့်ခန်း', roomBedroom: 'အိပ်ခန်း', roomBathroom: 'ရေချိုးခန်း',
+        roomKitchen: 'မီးဖုတ်ခန်း', roomDining: 'ထမင်းစားခန်း', roomBalcony: 'လက်တင်',
+        generateBtn: '✨ ပြင်ဆိုင်စနစ်ဖန်တီးပါမည်',
+        generating: 'AI သည် ပြင်ဆိုင်စနစ်ကို ဖန်တီးနေပါမည်...',
+        searchTitle: '🔎 ဆင်တူပြင်ဆိုင်စနစ်ရှာဖွေပါမည်',
+        searchDesc: 'ကြေးမုံအစိတ်အပိုင်းအရ အမှန်တကယ်ပုံများကို Unsplash မှာရှာဖွေပါမည်',
+        searchBtn: '🔍 ဆင်တူပါမည်',
+        searchLoading: 'ပုံများရှာဖွေနေပါမည်...',
+        demoWarning: '⚠️ ဒီမိုမုံပါ - အမှန်တကယ်ပုံများအတွက် UNSPLASH_ACCESS_KEY သတ်မှတ်ပါမည်',
+        success: '✅ ပြင်ဆိုင်စနစ် ဖန်တီးပါပါမည်!',
+        pattern: 'ပုံစံ', style: 'စတိုင်', mood: 'သဘောသား', recommend: 'အကြံပါမည်',
+        uploadSuccess: 'တင်ပါပါမည်!', uploading: 'တင်နေပါမည်...',
+        clickOrDrag: 'ဤနေရာသို့ ပုံကလစ်ဖ်သို့ ဆွဲယူပါမည်',
+        widthPlaceholder: 'အနံ', heightPlaceholder: 'အမြင့်',
+        keywordSearch: 'ရှာဖွေသည့်စာလုံး:',
+        detectedColor: 'သတ်မှတ်သည့်အရောင်'
+      }
+    };
         generateTitle: '🎨 Generate Scene',
         roomLabel: 'Room Type',
         roomLiving: 'Living Room', roomBedroom: 'Bedroom', roomBathroom: 'Bathroom',
@@ -538,14 +596,39 @@
         if (data.success) {
           const f = data.features;
           savedFeatures = { pattern: f.pattern, style: f.style, mood: f.mood };
+          
+          // 如果有偵測到的顏色，自動選取
+          if (f.detectedColor) {
+            const colorSelect = document.getElementById('color');
+            // 嘗試找到匹配的選項
+            const options = colorSelect.options;
+            let found = false;
+            for (let i = 0; i < options.length; i++) {
+              if (options[i].value === f.detectedColor) {
+                colorSelect.selectedIndex = i;
+                found = true;
+                break;
+              }
+            }
+            // 如果沒有匹配，顯示偵測到的顏色
+            if (!found && f.detectedColor !== document.getElementById('color').value) {
+              console.log('偵測到顏色:', f.detectedColor);
+            }
+          }
+          
           savedTileInfo = {
             color: document.getElementById('color').value,
             material: document.getElementById('material').value,
             roomType: document.getElementById('roomType').value
           };
           
+          // 顯示偵測到的顏色（如果有的話）
+          const detectedColorHtml = f.detectedColor ? 
+            `<div class="feature-item"><span class="feature-label">${t().detectedColor}:</span>${f.detectedColor} <span style="font-size:12px;color:#888;">(AI)</span></div>` : '';
+          
           document.getElementById('analyzeResult').innerHTML = `
             <div class="features-result">
+              ${detectedColorHtml}
               <div class="feature-item"><span class="feature-label">${t().pattern}:</span>${f.pattern}</div>
               <div class="feature-item"><span class="feature-label">${t().style}:</span>${f.style}</div>
               <div class="feature-item"><span class="feature-label">${t().mood}:</span>${f.mood}</div>
