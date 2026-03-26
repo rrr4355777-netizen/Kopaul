@@ -56,10 +56,24 @@ fastify.post('/api/upload', async (request, reply) => {
 
 // 2. AI 分析磁磚特徵
 fastify.post('/api/analyze', async (request, reply) => {
-  const { tilePath, width, height, color, material } = request.body;
+  const { tilePath, width, height, sizeUnit, color, material } = request.body;
   
   if (!tilePath) {
     return reply.code(400).send({ error: '缺少磁磚圖片路徑' });
+  }
+
+  // 轉換尺寸為 CM（統一方面積計算）
+  let widthCm = parseFloat(width) || 0;
+  let heightCm = parseFloat(height) || 0;
+  
+  if (sizeUnit === 'sqft') {
+    // 平方尺 → cm（1平方尺 = 30.48cm × 30.48cm ≈ 929cm²）
+    widthCm = Math.sqrt(parseFloat(width) * 929);
+    heightCm = Math.sqrt(parseFloat(height) * 929);
+  } else if (sizeUnit === 'sqm') {
+    // 平方米 → cm（1平方米 = 100cm × 100cm）
+    widthCm = Math.sqrt(parseFloat(width) * 10000);
+    heightCm = Math.sqrt(parseFloat(height) * 10000);
   }
 
   let detectedColor = color;

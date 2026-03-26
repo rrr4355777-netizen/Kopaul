@@ -221,10 +221,15 @@
     <div class="card">
       <h2 data-i18n="specTitle">📐 磁磚規格</h2>
       <div class="form-group">
-        <label data-i18n="sizeLabel">尺寸 (cm)</label>
-        <div style="display: flex; gap: 12px;">
-          <input type="number" id="width" placeholder="寬" value="30">
-          <input type="number" id="height" placeholder="高" value="30">
+        <label data-i18n="sizeLabel">尺寸</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="width" placeholder="寬" value="30" style="flex:1;">
+          <input type="number" id="height" placeholder="高" value="30" style="flex:1;">
+          <select id="sizeUnit" style="width:100px;">
+            <option value="cm" data-i18n="unitCm">cm</option>
+            <option value="sqft" data-i18n="unitSqft">平方尺</option>
+            <option value="sqm" data-i18n="unitSqm">平方米</option>
+          </select>
         </div>
       </div>
       <div class="form-group">
@@ -304,7 +309,7 @@
         uploadText: '點擊或拖曳圖片到此處',
         uploadHint: '支援 JPG, PNG, WEBP',
         specTitle: '📐 磁磚規格',
-        sizeLabel: '尺寸 (cm)',
+        sizeLabel: '尺寸',
         colorLabel: '顏色',
         materialLabel: '材質',
         selectColor: '選擇顏色',
@@ -333,7 +338,8 @@
         clickOrDrag: '點擊或拖曳圖片到此處',
         widthPlaceholder: '寬', heightPlaceholder: '高',
         keywordSearch: '搜尋關鍵字:',
-        detectedColor: '偵測到顏色'
+        detectedColor: '偵測到顏色',
+        unitCm: 'cm', unitSqft: '平方尺', unitSqm: '平方米'
       },
       'en': {
         title: '🏠 Tile Scene Simulator',
@@ -342,6 +348,75 @@
         uploadText: 'Click or drag image here',
         uploadHint: 'Supports JPG, PNG, WEBP',
         specTitle: '📐 Tile Specifications',
+        sizeLabel: 'Size',
+        colorLabel: 'Color',
+        materialLabel: 'Material',
+        selectColor: 'Select color',
+        selectMaterial: 'Select material',
+        colorLightGray: 'Light Gray', colorDarkGray: 'Dark Gray', colorBeige: 'Beige',
+        colorLightBrown: 'Light Brown', colorDarkBrown: 'Dark Brown', colorWhite: 'White',
+        colorBlack: 'Black', colorBlue: 'Blue', colorGreen: 'Green',
+        materialTile: 'Tile', materialStone: 'Stone', materialWood: 'Wood',
+        materialMosaic: 'Mosaic', materialConcrete: 'Concrete',
+        analyzeBtn: '🔍 Analyze Tile',
+        analyzeBtnLoading: 'Analyzing...',
+        generateTitle: '🎨 Generate Scene',
+        roomLabel: 'Room Type',
+        roomLiving: 'Living Room', roomBedroom: 'Bedroom', roomBathroom: 'Bathroom',
+        roomKitchen: 'Kitchen', roomDining: 'Dining Room', roomBalcony: 'Balcony',
+        generateBtn: '✨ Generate Scene',
+        generating: 'AI is generating scene...',
+        searchTitle: '🔎 Search Similar Scenes',
+        searchDesc: 'Search real scene images from Unsplash based on tile features',
+        searchBtn: '🔍 Search Similar Scenes',
+        searchLoading: 'Searching scene images...',
+        demoWarning: '⚠️ Demo Mode - Set UNSPLASH_ACCESS_KEY for real images',
+        success: '✅ Scene generated!',
+        pattern: 'Pattern', style: 'Style', mood: 'Mood', recommend: 'Recommended',
+        uploadSuccess: 'Upload success!', uploading: 'Uploading...',
+        clickOrDrag: 'Click or drag image here',
+        widthPlaceholder: 'Width', heightPlaceholder: 'Height',
+        keywordSearch: 'Search keyword:',
+        detectedColor: 'Detected color',
+        unitCm: 'cm', unitSqft: 'sq ft', unitSqm: 'sq m'
+      },
+      'my': {
+        title: '🏠 ကြေးမုံအန်စာပြင်ဆိုင်စနစ်',
+        subtitle: 'ကြေးမုံပုံတင်ပါက AI သည် အိမ်အလှဆင်မှုပြင်ဆိုင်စနစ်ကို ဖန်တီးပါပါမည်',
+        uploadTitle: '📤 ကြေးမုံပုံတင်ပါမည်',
+        uploadText: 'ဤနေရာသို့ ပုံကလစ်ဖ်သို့ ဆွဲယူပါမည်',
+        uploadHint: 'JPG, PNG, WEBP မှာယူပါပါမည်',
+        specTitle: '📐 ကြေးမုံအရွယ်အစား',
+        sizeLabel: 'အရွယ်အစား',
+        colorLabel: 'အရောင်',
+        materialLabel: 'ပစ္စည်း',
+        selectColor: 'အရောင်ရွေးပါမည်',
+        selectMaterial: 'ပစ္စည်းရွေးပါမည်',
+        colorLightGray: 'အပြားခရမ်း', colorDarkGray: 'အမည်းခရမ်း', colorBeige: 'အဝါစိမ်',
+        colorLightBrown: 'အမဲရင်း', colorDarkBrown: 'အမဲသန်း', colorWhite: 'အဖြူ', colorBlack: 'အမည်း', colorBlue: 'အပြာ', colorGreen: 'အစိမ်း',
+        materialTile: 'ကြေးမုံ', materialStone: 'ကျောက်', materialWood: 'သစ်သား', materialMosaic: 'မိုဆိုက်', materialConcrete: 'စွပ်ကျယ်',
+        analyzeBtn: '🔍 ကြေးမုံအစိတ်အပိုင်းကို ခွဲခြမ်းပါမည်',
+        analyzeBtnLoading: 'ခွဲခြမ်းဆွဲနေပါမည်...',
+        generateTitle: '🎨 ပြင်ဆိုင်စနစ်ဖန်တီးပါမည်',
+        roomLabel: 'အခန်းအမျိုးအစား',
+        roomLiving: 'ဧည့်ခန်း', roomBedroom: 'အိပ်ခန်း', roomBathroom: 'ရေချိုးခန်း',
+        roomKitchen: 'မီးဖုတ်ခန်း', roomDining: 'ထမင်းစားခန်း', roomBalcony: 'လက်တင်',
+        generateBtn: '✨ ပြင်ဆိုင်စနစ်ဖန်တီးပါမည်',
+        generating: 'AI သည် ပြင်ဆိုင်စနစ်ကို ဖန်တီးနေပါမည်...',
+        searchTitle: '🔎 ဆင်တူပြင်ဆိုင်စနစ်ရှာဖွေပါမည်',
+        searchDesc: 'ကြေးမုံအစိတ်အပိုင်းအရ အမှန်တကယ်ပုံများကို Unsplash မှာရှာဖွေပါမည်',
+        searchBtn: '🔍 ဆင်တူပါမည်',
+        searchLoading: 'ပုံများရှာဖွေနေပါမည်...',
+        demoWarning: '⚠️ ဒီမိုမုံပါ - အမှန်တကယ်ပုံများအတွက် UNSPLASH_ACCESS_KEY သတ်မှတ်ပါမည်',
+        success: '✅ ပြင်ဆိုင်စနစ် ဖန်တီးပါပါမည်!',
+        pattern: 'ပုံစံ', style: 'စတိုင်', mood: 'သဘောသား', recommend: 'အကြံပါမည်',
+        uploadSuccess: 'တင်ပါပါမည်!', uploading: 'တင်နေပါမည်...',
+        clickOrDrag: 'ဤနေရာသို့ ပုံကလစ်ဖ်သို့ ဆွဲယူပါမည်',
+        widthPlaceholder: 'အနံ', heightPlaceholder: 'အမြင့်',
+        keywordSearch: 'ရှာဖွေသည့်စာလုံး:',
+        detectedColor: 'သတ်မှတ်သည့်အရောင်',
+        unitCm: 'စင်တီမီတာ', unitSqft: 'စတုရန်းပေ', unitSqm: 'စတုရန်းမီတာ'
+      }
         sizeLabel: 'Size (cm)',
         colorLabel: 'Color',
         materialLabel: 'Material',
@@ -499,6 +574,14 @@
       roomSelect.options[4].text = t.roomDining;
       roomSelect.options[5].text = t.roomBalcony;
       
+      // 更新尺寸單位
+      const sizeUnitSelect = document.getElementById('sizeUnit');
+      if (sizeUnitSelect) {
+        sizeUnitSelect.options[0].text = t.unitCm || 'cm';
+        sizeUnitSelect.options[1].text = t.unitSqft || 'sq ft';
+        sizeUnitSelect.options[2].text = t.unitSqm || 'sq m';
+      }
+      
       // 更新 input placeholder
       document.getElementById('width').placeholder = t.widthPlaceholder;
       document.getElementById('height').placeholder = t.heightPlaceholder;
@@ -575,6 +658,7 @@
       
       const width = document.getElementById('width').value;
       const height = document.getElementById('height').value;
+      const sizeUnit = document.getElementById('sizeUnit').value;
       const color = document.getElementById('color').value;
       const material = document.getElementById('material').value;
       
@@ -588,7 +672,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             tilePath: currentFilePath,
-            width, height, color, material
+            width, height, sizeUnit, color, material
           })
         });
         const data = await res.json();
