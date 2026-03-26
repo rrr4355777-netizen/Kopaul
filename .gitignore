@@ -1,0 +1,8 @@
+# 忽略敏感檔案
+.env
+node_modules/
+uploads/
+*.log
+
+# Keep these template files
+!.env.example

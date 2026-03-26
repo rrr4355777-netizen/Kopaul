@@ -1,0 +1,222 @@
+// 環境變數
+require('dotenv').config();
+
+const fastify = require('fastify')({ logger: true });
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+
+// 設定上傳目錄
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 靜態檔案服務
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, 'public'),
+  prefix: '/'
+});
+
+fastify.register(require('@fastify/multipart'));
+
+// ========== API 路由 ==========
+
+// 0. API 狀態檢查
+fastify.get('/api/status', async (request, reply) => {
+  return {
+    success: true,
+    apiKeys: {
+      replicate: !!process.env.REPLICATE_API_TOKEN
+    },
+    server: { version: '2.1.0', uptime: process.uptime() }
+  };
+});
+
+// 1. 上傳磁磚圖片
+fastify.post('/api/upload', async (request, reply) => {
+  const data = await request.file();
+  if (!data || !data.file) {
+    return reply.code(400).send({ error: '沒有上傳檔案' });
+  }
+  
+  const ext = path.extname(data.filename) || '.jpg';
+  const newFilename = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
+  const newPath = path.join(uploadDir, newFilename);
+  
+  const stream = fs.createWriteStream(newPath);
+  await new Promise((resolve, reject) => {
+    data.file.pipe(stream);
+    data.file.on('end', resolve);
+    data.file.on('error', reject);
+  });
+  
+  return { success: true, filePath: `/uploads/${newFilename}`, fileName: newFilename };
+});
+
+// 2. AI 分析磁磚特徵
+fastify.post('/api/analyze', async (request, reply) => {
+  const { tilePath, width, height, color, material } = request.body;
+  
+  if (!tilePath) {
+    return reply.code(400).send({ error: '缺少磁磚圖片路徑' });
+  }
+
+  const features = {
+    pattern: detectPattern(color),
+    style: inferStyle(material),
+    mood: inferMood(color, material),
+    recommendedRooms: getRecommendedRooms(material)
+  };
+  
+  return { success: true, features, tileInfo: { width, height, color, material } };
+});
+
+// 3. 生成場景模擬圖
+fastify.post('/api/generate', async (request, reply) => {
+  const { tilePath, features, roomType = 'living room' } = request.body;
+  
+  if (!tilePath || !features) {
+    return reply.code(400).send({ error: '缺少必要參數' });
+  }
+
+  try {
+    const prompt = buildScenePrompt(features, roomType);
+    
+    // === 主要方案：Replicate ===
+    if (process.env.REPLICATE_API_TOKEN) {
+      const versionId = 'c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e';
+      
+      const response = await axios.post(
+        'https://api.replicate.com/v1/predictions',
+        {
+          version: versionId,
+          input: { prompt: prompt, go_fast: true, num_outputs: 1, aspect_ratio: '16:9' }
+        },
+        {
+          headers: {
+            'Authorization': 'Token ' + process.env.REPLICATE_API_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const result = response.data;
+      
+      // 等待生成完成（最多 30 秒）
+      if (result.status === 'succeeded') {
+        return { success: true, imageUrl: result.output[0], prompt: prompt, provider: 'replicate' };
+      } else if (result.status === 'failed') {
+        return reply.code(500).send({ error: 'AI 生成失敗', detail: result.error });
+      } else {
+        // 輪詢等待結果
+        let attempts = 0;
+        while (attempts < 15) {
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            const check = await axios.get(result.urls.get, {
+              headers: { 'Authorization': 'Token ' + process.env.REPLICATE_API_TOKEN }
+            });
+            if (check.data.status === 'succeeded') {
+              return { success: true, imageUrl: check.data.output[0], prompt: prompt, provider: 'replicate' };
+            } else if (check.data.status === 'failed') {
+              return reply.code(500).send({ error: 'AI 生成失敗' });
+            }
+          } catch (e) { break; }
+          attempts++;
+        }
+        return reply.code(500).send({ error: 'AI 生成逾時' });
+      }
+    }
+    
+    // Demo 模式
+    return {
+      success: true,
+      message: 'demo mode',
+      prompt: prompt,
+      imageUrl: 'https://placehold.co/800x600/e8e4dc/666?text=Tile+Scene+Preview',
+      provider: 'demo'
+    };
+  } catch (error) {
+    console.error('生成失敗:', error.message);
+    return reply.code(500).send({ error: '場景生成失敗: ' + error.message });
+  }
+});
+
+// 4. 搜尋相似場景（Demo）
+fastify.post('/api/search-scenes', async (request, reply) => {
+  const { color, material, roomType } = request.body;
+  const keywords = buildSearchKeywords(color, material, roomType);
+  
+  return {
+    success: true,
+    mode: 'demo',
+    query: keywords,
+    images: getMockSceneImages(color, material, roomType)
+  };
+});
+
+// ========== 輔助函數 ==========
+
+function detectPattern(color) {
+  const patterns = ['大理石紋', '木紋', '幾何', '花卉', '純色', '條紋'];
+  if (color && color.toLowerCase().includes('深')) return '大理石紋';
+  return patterns[Math.floor(Math.random() * patterns.length)];
+}
+
+function inferStyle(material) {
+  const styles = { '瓷磚': '現代簡約', '石材': '自然鄉村', '木材': '北歐風', '馬賽克': '復古華麗', '水泥': '工業風' };
+  return styles[material] || '現代簡約';
+}
+
+function inferMood(material) {
+  const moods = { '瓷磚': '清新明亮', '石材': '沉穩大氣', '木材': '溫暖舒適', '馬賽克': '繽紛活潑', '水泥': '冷冽前衛' };
+  return moods[material] || '溫馨舒適';
+}
+
+function getRecommendedRooms(material) {
+  const rooms = { '瓷磚': ['浴室', '廚房', '陽台'], '石材': ['客廳', '大堂', '浴室'], '木材': ['臥室', '書房', '客廳'], '馬賽克': ['浴室', '廚房', '泳池'], '水泥': ['車庫', '陽台', '工作室'] };
+  return rooms[material] || ['客廳', '浴室', '廚房'];
+}
+
+function buildScenePrompt(features, roomType) {
+  const { pattern, style, mood } = features;
+  return `A ${roomType} with ${pattern} ${style} tile flooring or wall, ${mood} atmosphere, realistic interior photo, high quality, 8k`;
+}
+
+function buildSearchKeywords(color, material, roomType) {
+  const roomKeywords = { '浴室': 'bathroom', '廚房': 'kitchen', '客廳': 'living room', '臥室': 'bedroom', '餐廳': 'dining room', '陽台': 'balcony' };
+  const materialKeywords = { '瓷磚': 'tile', '石材': 'stone', '木材': 'wood', '馬賽克': 'mosaic', '水泥': 'concrete' };
+  const colorKeywords = { '淺灰': 'light gray', '深灰': 'dark gray', '米白': 'beige', '淺棕': 'light brown', '深棕': 'dark brown', '白色': 'white', '黑色': 'black', '藍色': 'blue', '綠色': 'green' };
+  
+  const parts = [];
+  if (roomType) parts.push(roomKeywords[roomType] || roomType);
+  if (material) parts.push(materialKeywords[material] || material);
+  if (color) parts.push(colorKeywords[color] || color);
+  parts.push('interior', 'tile');
+  return parts.join(' ');
+}
+
+function getMockSceneImages() {
+  return [
+    { id: 'mock1', thumbUrl: 'https://placehold.co/200x150/e8e4dc/666?text=Scene+1', regularUrl: 'https://placehold.co/800x600/e8e4dc/666?text=Scene+1', description: '模擬場景 1', photographer: 'Demo' },
+    { id: 'mock2', thumbUrl: 'https://placehold.co/200x150/d4c4b0/555?text=Scene+2', regularUrl: 'https://placehold.co/800x600/d4c4b0/555?text=Scene+2', description: '模擬場景 2', photographer: 'Demo' },
+    { id: 'mock3', thumbUrl: 'https://placehold.co/200x150/c9b89d/444?text=Scene+3', regularUrl: 'https://placehold.co/800x600/c9b89d/444?text=Scene+3', description: '模擬場景 3', photographer: 'Demo' },
+    { id: 'mock4', thumbUrl: 'https://placehold.co/200x150/bfae8c/333?text=Scene+4', regularUrl: 'https://placehold.co/800x600/bfae8c/333?text=Scene+4', description: '模擬場景 4', photographer: 'Demo' },
+    { id: 'mock5', thumbUrl: 'https://placehold.co/200x150/b4a07b/222?text=Scene+5', regularUrl: 'https://placehold.co/800x600/b4a07b/222?text=Scene+5', description: '模擬場景 5', photographer: 'Demo' },
+    { id: 'mock6', thumbUrl: 'https://placehold.co/200x150/a9966a/111?text=Scene+6', regularUrl: 'https://placehold.co/800x600/a9966a/111?text=Scene+6', description: '模擬場景 6', photographer: 'Demo' }
+  ];
+}
+
+// 啟動伺服器
+const start = async () => {
+  try {
+    await fastify.listen({ port: 3000, host: '0.0.0.0' });
+    console.log('🚀 磁磚場景系統 v2.1 已啟動: http://localhost:3000');
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>磁磚場景模擬系統</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #444;
+      border-bottom: 2px solid #e8e4dc;
+      padding-bottom: 8px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #555;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e8e4dc;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #8b7355;
+    }
+    .upload-area {
+      border: 3px dashed #ccc;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-area:hover {
+      border-color: #8b7355;
+      background: #faf8f5;
+    }
+    .upload-area.dragover {
+      border-color: #8b7355;
+      background: #f5f0e8;
+    }
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .preview-img {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-top: 16px;
+      display: none;
+    }
+    .btn {
+      background: #8b7355;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #6d5a44; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-secondary {
+      background: #5a7a5a;
+      margin-top: 12px;
+    }
+    .btn-secondary:hover { background: #4a664a; }
+    
+    .scene-gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .scene-gallery img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .scene-gallery img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .scene-gallery .photo-credit {
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+      margin-top: 4px;
+    }
+    
+    .features-result {
+      background: #f8f6f2;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .feature-item {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    .feature-label {
+      font-weight: 600;
+      color: #666;
+      min-width: 80px;
+    }
+    
+    .result-area {
+      text-align: center;
+    }
+    .scene-img {
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .loading {
+      display: none;
+      margin: 20px 0;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e8e4dc;
+      border-top-color: #8b7355;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .error { color: #d32f2f; margin-top: 12px; }
+    .success { color: #388e3c; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏠 磁磚場景模擬系統</h1>
+    <p class="subtitle">上傳磁磚圖片，AI 為你生成室內場景預覽</p>
+    
+    <!-- 1. 上傳磁磚 -->
+    <div class="card">
+      <h2>📤 上傳磁磚圖片</h2>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">🧱</div>
+        <p>點擊或拖曳圖片到此處</p>
+        <p style="font-size: 13px; color: #999;">支援 JPG, PNG, WEBP</p>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <img class="preview-img" id="previewImg" alt="預覽">
+      </div>
+    </div>
+    
+    <!-- 2. 輸入規格 -->
+    <div class="card">
+      <h2>📐 磁磚規格</h2>
+      <div class="form-group">
+        <label>尺寸 (cm)</label>
+        <div style="display: flex; gap: 12px;">
+          <input type="number" id="width" placeholder="寬" value="30">
+          <input type="number" id="height" placeholder="高" value="30">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>顏色</label>
+        <select id="color">
+          <option value="">選擇顏色</option>
+          <option value="淺灰">淺灰</option>
+          <option value="深灰">深灰</option>
+          <option value="米白">米白</option>
+          <option value="淺棕">淺棕</option>
+          <option value="深棕">深棕</option>
+          <option value="白色">白色</option>
+          <option value="黑色">黑色</option>
+          <option value="藍色">藍色</option>
+          <option value="綠色">綠色</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>材質</label>
+        <select id="material">
+          <option value="">選擇材質</option>
+          <option value="瓷磚">瓷磚</option>
+          <option value="石材">石材</option>
+          <option value="木材">木材</option>
+          <option value="馬賽克">馬賽克</option>
+          <option value="水泥">水泥</option>
+        </select>
+      </div>
+      <button class="btn" id="analyzeBtn">🔍 分析磁磚特徵</button>
+      <div id="analyzeResult"></div>
+    </div>
+    
+    <!-- 3. 生成場景 -->
+    <div class="card">
+      <h2>🎨 生成場景模擬圖</h2>
+      <div class="form-group">
+        <label>房間類型</label>
+        <select id="roomType">
+          <option value="living room">客廳</option>
+          <option value="bedroom">臥室</option>
+          <option value="bathroom">浴室</option>
+          <option value="kitchen">廚房</option>
+          <option value="dining room">餐廳</option>
+          <option value="balcony">陽台</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary" id="generateBtn" disabled>✨ 生成場景圖</button>
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>AI 正在生成場景中...</p>
+      </div>
+      <div id="generateResult"></div>
+    </div>
+    
+    <!-- 4. 搜尋相似場景 -->
+    <div class="card">
+      <h2>🔎 搜尋相似場景</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+        根據磁磚特徵搜尋 Unsplash 上的真實場景圖片
+      </p>
+      <button class="btn" id="searchBtn" disabled>🔍 搜尋相似場景</button>
+      <div class="loading" id="searchLoading">
+        <div class="spinner"></div>
+        <p>正在搜尋場景圖片...</p>
+      </div>
+      <div id="searchResult"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentFilePath = '';
+    
+    // 上傳處理
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewImg = document.getElementById('previewImg');
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+    
+    async function handleFile(file) {
+      const formData = new FormData();
+      formData.append('tileImage', file);
+      
+      uploadArea.querySelector('p').textContent = '上傳中...';
+      
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if (data.success) {
+          currentFilePath = data.filePath;
+          previewImg.src = data.filePath;
+          previewImg.style.display = 'block';
+          uploadArea.querySelector('p').textContent = '上傳成功！';
+        } else {
+          alert(data.error || '上傳失敗');
+        }
+      } catch (err) {
+        alert('上傳錯誤: ' + err.message);
+      }
+    }
+    
+    // 全域變數儲存分析結果
+    let savedFeatures = null;
+    let savedTileInfo = null;
+    
+    // 分析特徵
+    document.getElementById('analyzeBtn').addEventListener('click', async () => {
+      if (!currentFilePath) {
+        alert('請先上傳磁磚圖片');
+        return;
+      }
+      
+      const width = document.getElementById('width').value;
+      const height = document.getElementById('height').value;
+      const color = document.getElementById('color').value;
+      const material = document.getElementById('material').value;
+      
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      btn.textContent = '分析中...';
+      
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tilePath: currentFilePath,
+            width, height, color, material
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          const f = data.features;
+          // ✅ 儲存 features 到全域變數，供生成時使用
+          savedFeatures = {
+            pattern: f.pattern,
+            style: f.style,
+            mood: f.mood
+          };
+          
+          // ✅ 儲存顏色、材質、房間類型供搜尋使用
+          savedTileInfo = {
+            color: document.getElementById('color').value,
+            material: document.getElementById('material').value,
+            roomType: document.getElementById('roomType').value
+          };
+          
+          document.getElementById('analyzeResult').innerHTML = `
+            <div class="features-result">
+              <div class="feature-item"><span class="feature-label">花紋:</span>${f.pattern}</div>
+              <div class="feature-item"><span class="feature-label">風格:</span>${f.style}</div>
+              <div class="feature-item"><span class="feature-label">氛圍:</span>${f.mood}</div>
+              <div class="feature-item"><span class="feature-label">推薦:</span>${f.recommendedRooms.join(', ')}</div>
+            </div>
+          `;
+          document.getElementById('generateBtn').disabled = false;
+          document.getElementById('searchBtn').disabled = false;
+        }
+      } catch (err) {
+        alert('分析失敗: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 分析磁磚特徵';
+      }
+    });
+    
+    // 生成場景 - 使用真實的 features 資料
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      if (!currentFilePath) {
+        alert('請先上傳磁磚並分析');
+        return;
+      }
+      
+      if (!savedFeatures) {
+        alert('請先分析磁磚特徵');
+        return;
+      }
+      
+      const roomType = document.getElementById('roomType').value;
+      
+      // ✅ 使用分析結果的真實 features
+      const features = savedFeatures;
+      
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('generateBtn').disabled = true;
+      
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tilePath: currentFilePath,
+            features,
+            roomType
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('generateResult').innerHTML = `
+            <div class="result-area">
+              <img class="scene-img" src="${data.imageUrl}" alt="場景模擬圖">
+              <p class="success">✅ 場景生成完成！</p>
+              <p style="font-size:13px;color:#666;">Prompt: ${data.prompt}</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        document.getElementById('generateResult').innerHTML = 
+          `<p class="error">生成失敗: ${err.message}</p>`;
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('generateBtn').disabled = false;
+      }
+    });
+    
+    // 搜尋相似場景
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      if (!savedTileInfo) {
+        alert('請先分析磁磚特徵');
+        return;
+      }
+      
+      const { color, material, roomType } = savedTileInfo;
+      
+      document.getElementById('searchLoading').style.display = 'block';
+      document.getElementById('searchBtn').disabled = true;
+      
+      try {
+        const res = await fetch('/api/search-scenes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color, material, roomType })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          const images = data.images;
+          const modeLabel = data.mode === 'demo' ? '<p style="color:#888;font-size:13px;">⚠️ Demo 模式 - 請設定 UNSPLASH_ACCESS_KEY 以取得真實圖片</p>' : '';
+          
+          const galleryHtml = images.map(img => `
+            <div>
+              <img src="${img.thumbUrl}" alt="${img.description || '場景圖片'}" 
+                   onclick="window.open('${img.regularUrl}', '_blank')"
+                   title="${img.description || '點擊查看大圖'}">
+              <p class="photo-credit">📷 ${img.photographer}</p>
+            </div>
+          `).join('');
+          
+          document.getElementById('searchResult').innerHTML = `
+            ${modeLabel}
+            <div class="scene-gallery">${galleryHtml}</div>
+            <p style="font-size:13px;color:#666;margin-top:12px;">搜尋關鍵字: ${data.query}</p>
+          `;
+        }
+      } catch (err) {
+        document.getElementById('searchResult').innerHTML = 
+          `<p class="error">搜尋失敗: ${err.message}</p>`;
+      } finally {
+        document.getElementById('searchLoading').style.display = 'none';
+        document.getElementById('searchBtn').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
