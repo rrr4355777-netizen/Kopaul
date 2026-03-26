@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>磁磚場景模擬系統</title>
+  <title>磁磚場景模擬系統 | Tile Scene Simulator</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -15,6 +15,21 @@
     .container {
       max-width: 800px;
       margin: 0 auto;
+    }
+    /* Language Selector */
+    .lang-selector {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+    .lang-selector select {
+      padding: 8px 12px;
+      border: 2px solid #8b7355;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+      cursor: pointer;
     }
     h1 {
       text-align: center;
@@ -177,17 +192,25 @@
   </style>
 </head>
 <body>
+  <!-- Language Selector -->
+  <div class="lang-selector">
+    <select id="langSelect" onchange="changeLanguage(this.value)">
+      <option value="zh-TW">繁體中文</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <div class="container">
-    <h1>🏠 磁磚場景模擬系統</h1>
-    <p class="subtitle">上傳磁磚圖片，AI 為你生成室內場景預覽</p>
+    <h1 data-i18n="title">🏠 磁磚場景模擬系統</h1>
+    <p class="subtitle" data-i18n="subtitle">上傳磁磚圖片，AI 為你生成室內場景預覽</p>
     
     <!-- 1. 上傳磁磚 -->
     <div class="card">
-      <h2>📤 上傳磁磚圖片</h2>
+      <h2 data-i18n="uploadTitle">📤 上傳磁磚圖片</h2>
       <div class="upload-area" id="uploadArea">
         <div class="upload-icon">🧱</div>
-        <p>點擊或拖曳圖片到此處</p>
-        <p style="font-size: 13px; color: #999;">支援 JPG, PNG, WEBP</p>
+        <p data-i18n="uploadText">點擊或拖曳圖片到此處</p>
+        <p style="font-size: 13px; color: #999;" data-i18n="uploadHint">支援 JPG, PNG, WEBP</p>
         <input type="file" id="fileInput" accept="image/*" hidden>
         <img class="preview-img" id="previewImg" alt="預覽">
       </div>
@@ -195,88 +218,254 @@
     
     <!-- 2. 輸入規格 -->
     <div class="card">
-      <h2>📐 磁磚規格</h2>
+      <h2 data-i18n="specTitle">📐 磁磚規格</h2>
       <div class="form-group">
-        <label>尺寸 (cm)</label>
+        <label data-i18n="sizeLabel">尺寸 (cm)</label>
         <div style="display: flex; gap: 12px;">
           <input type="number" id="width" placeholder="寬" value="30">
           <input type="number" id="height" placeholder="高" value="30">
         </div>
       </div>
       <div class="form-group">
-        <label>顏色</label>
+        <label data-i18n="colorLabel">顏色</label>
         <select id="color">
-          <option value="">選擇顏色</option>
-          <option value="淺灰">淺灰</option>
-          <option value="深灰">深灰</option>
-          <option value="米白">米白</option>
-          <option value="淺棕">淺棕</option>
-          <option value="深棕">深棕</option>
-          <option value="白色">白色</option>
-          <option value="黑色">黑色</option>
-          <option value="藍色">藍色</option>
-          <option value="綠色">綠色</option>
+          <option value="" data-i18n="selectColor">選擇顏色</option>
+          <option value="淺灰" data-i18n="colorLightGray">淺灰</option>
+          <option value="深灰" data-i18n="colorDarkGray">深灰</option>
+          <option value="米白" data-i18n="colorBeige">米白</option>
+          <option value="淺棕" data-i18n="colorLightBrown">淺棕</option>
+          <option value="深棕" data-i18n="colorDarkBrown">深棕</option>
+          <option value="白色" data-i18n="colorWhite">白色</option>
+          <option value="黑色" data-i18n="colorBlack">黑色</option>
+          <option value="藍色" data-i18n="colorBlue">藍色</option>
+          <option value="綠色" data-i18n="colorGreen">綠色</option>
         </select>
       </div>
       <div class="form-group">
-        <label>材質</label>
+        <label data-i18n="materialLabel">材質</label>
         <select id="material">
-          <option value="">選擇材質</option>
-          <option value="瓷磚">瓷磚</option>
-          <option value="石材">石材</option>
-          <option value="木材">木材</option>
-          <option value="馬賽克">馬賽克</option>
-          <option value="水泥">水泥</option>
+          <option value="" data-i18n="selectMaterial">選擇材質</option>
+          <option value="瓷磚" data-i18n="materialTile">瓷磚</option>
+          <option value="石材" data-i18n="materialStone">石材</option>
+          <option value="木材" data-i18n="materialWood">木材</option>
+          <option value="馬賽克" data-i18n="materialMosaic">馬賽克</option>
+          <option value="水泥" data-i18n="materialConcrete">水泥</option>
         </select>
       </div>
-      <button class="btn" id="analyzeBtn">🔍 分析磁磚特徵</button>
+      <button class="btn" id="analyzeBtn" data-i18n="analyzeBtn">🔍 分析磁磚特徵</button>
       <div id="analyzeResult"></div>
     </div>
     
     <!-- 3. 生成場景 -->
     <div class="card">
-      <h2>🎨 生成場景模擬圖</h2>
+      <h2 data-i18n="generateTitle">🎨 生成場景模擬圖</h2>
       <div class="form-group">
-        <label>房間類型</label>
+        <label data-i18n="roomLabel">房間類型</label>
         <select id="roomType">
-          <option value="living room">客廳</option>
-          <option value="bedroom">臥室</option>
-          <option value="bathroom">浴室</option>
-          <option value="kitchen">廚房</option>
-          <option value="dining room">餐廳</option>
-          <option value="balcony">陽台</option>
+          <option value="living room" data-i18n="roomLiving">客廳</option>
+          <option value="bedroom" data-i18n="roomBedroom">臥室</option>
+          <option value="bathroom" data-i18n="roomBathroom">浴室</option>
+          <option value="kitchen" data-i18n="roomKitchen">廚房</option>
+          <option value="dining room" data-i18n="roomDining">餐廳</option>
+          <option value="balcony" data-i18n="roomBalcony">陽台</option>
         </select>
       </div>
-      <button class="btn btn-secondary" id="generateBtn" disabled>✨ 生成場景圖</button>
+      <button class="btn btn-secondary" id="generateBtn" disabled data-i18n="generateBtn">✨ 生成場景圖</button>
       <div class="loading" id="loading">
         <div class="spinner"></div>
-        <p>AI 正在生成場景中...</p>
+        <p data-i18n="generating">AI 正在生成場景中...</p>
       </div>
       <div id="generateResult"></div>
     </div>
     
     <!-- 4. 搜尋相似場景 -->
     <div class="card">
-      <h2>🔎 搜尋相似場景</h2>
-      <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+      <h2 data-i18n="searchTitle">🔎 搜尋相似場景</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 16px;" data-i18n="searchDesc">
         根據磁磚特徵搜尋 Unsplash 上的真實場景圖片
       </p>
-      <button class="btn" id="searchBtn" disabled>🔍 搜尋相似場景</button>
+      <button class="btn" id="searchBtn" disabled data-i18n="searchBtn">🔍 搜尋相似場景</button>
       <div class="loading" id="searchLoading">
         <div class="spinner"></div>
-        <p>正在搜尋場景圖片...</p>
+        <p data-i18n="searchLoading">正在搜尋場景圖片...</p>
       </div>
       <div id="searchResult"></div>
     </div>
   </div>
 
   <script>
+    // ========== 多語系翻譯 ==========
+    const translations = {
+      'zh-TW': {
+        title: '🏠 磁磚場景模擬系統',
+        subtitle: '上傳磁磚圖片，AI 為你生成室內場景預覽',
+        uploadTitle: '📤 上傳磁磚圖片',
+        uploadText: '點擊或拖曳圖片到此處',
+        uploadHint: '支援 JPG, PNG, WEBP',
+        specTitle: '📐 磁磚規格',
+        sizeLabel: '尺寸 (cm)',
+        colorLabel: '顏色',
+        materialLabel: '材質',
+        selectColor: '選擇顏色',
+        selectMaterial: '選擇材質',
+        colorLightGray: '淺灰', colorDarkGray: '深灰', colorBeige: '米白',
+        colorLightBrown: '淺棕', colorDarkBrown: '深棕', colorWhite: '白色',
+        colorBlack: '黑色', colorBlue: '藍色', colorGreen: '綠色',
+        materialTile: '瓷磚', materialStone: '石材', materialWood: '木材',
+        materialMosaic: '馬賽克', materialConcrete: '水泥',
+        analyzeBtn: '🔍 分析磁磚特徵',
+        analyzeBtnLoading: '分析中...',
+        generateTitle: '🎨 生成場景模擬圖',
+        roomLabel: '房間類型',
+        roomLiving: '客廳', roomBedroom: '臥室', roomBathroom: '浴室',
+        roomKitchen: '廚房', roomDining: '餐廳', roomBalcony: '陽台',
+        generateBtn: '✨ 生成場景圖',
+        generating: 'AI 正在生成場景中...',
+        searchTitle: '🔎 搜尋相似場景',
+        searchDesc: '根據磁磚特徵搜尋 Unsplash 上的真實場景圖片',
+        searchBtn: '🔍 搜尋相似場景',
+        searchLoading: '正在搜尋場景圖片...',
+        demoWarning: '⚠️ Demo 模式 - 請設定 UNSPLASH_ACCESS_KEY 以取得真實圖片',
+        success: '✅ 場景生成完成！',
+        pattern: '花紋', style: '風格', mood: '氛圍', recommend: '推薦',
+        uploadSuccess: '上傳成功！', uploading: '上傳中...',
+        clickOrDrag: '點擊或拖曳圖片到此處',
+        widthPlaceholder: '寬', heightPlaceholder: '高',
+        keywordSearch: '搜尋關鍵字:'
+      },
+      'en': {
+        title: '🏠 Tile Scene Simulator',
+        subtitle: 'Upload a tile image, AI generates indoor scene previews',
+        uploadTitle: '📤 Upload Tile Image',
+        uploadText: 'Click or drag image here',
+        uploadHint: 'Supports JPG, PNG, WEBP',
+        specTitle: '📐 Tile Specifications',
+        sizeLabel: 'Size (cm)',
+        colorLabel: 'Color',
+        materialLabel: 'Material',
+        selectColor: 'Select color',
+        selectMaterial: 'Select material',
+        colorLightGray: 'Light Gray', colorDarkGray: 'Dark Gray', colorBeige: 'Beige',
+        colorLightBrown: 'Light Brown', colorDarkBrown: 'Dark Brown', colorWhite: 'White',
+        colorBlack: 'Black', colorBlue: 'Blue', colorGreen: 'Green',
+        materialTile: 'Tile', materialStone: 'Stone', materialWood: 'Wood',
+        materialMosaic: 'Mosaic', materialConcrete: 'Concrete',
+        analyzeBtn: '🔍 Analyze Tile',
+        analyzeBtnLoading: 'Analyzing...',
+        generateTitle: '🎨 Generate Scene',
+        roomLabel: 'Room Type',
+        roomLiving: 'Living Room', roomBedroom: 'Bedroom', roomBathroom: 'Bathroom',
+        roomKitchen: 'Kitchen', roomDining: 'Dining Room', roomBalcony: 'Balcony',
+        generateBtn: '✨ Generate Scene',
+        generating: 'AI is generating scene...',
+        searchTitle: '🔎 Search Similar Scenes',
+        searchDesc: 'Search real scene images from Unsplash based on tile features',
+        searchBtn: '🔍 Search Similar Scenes',
+        searchLoading: 'Searching scene images...',
+        demoWarning: '⚠️ Demo Mode - Set UNSPLASH_ACCESS_KEY for real images',
+        success: '✅ Scene generated!',
+        pattern: 'Pattern', style: 'Style', mood: 'Mood', recommend: 'Recommended',
+        uploadSuccess: 'Upload success!', uploading: 'Uploading...',
+        clickOrDrag: 'Click or drag image here',
+        widthPlaceholder: 'Width', heightPlaceholder: 'Height',
+        keywordSearch: 'Search keyword:'
+      }
+    };
+
+    // 當前語言
+    let currentLang = 'zh-TW';
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      const t = translations[lang];
+      
+      // 更新標題和副標題
+      document.querySelector('h1').textContent = t.title;
+      document.querySelector('.subtitle').textContent = t.subtitle;
+      
+      // 更新所有 card 標題
+      document.querySelectorAll('.card h2')[0].textContent = t.uploadTitle;
+      document.querySelectorAll('.card h2')[1].textContent = t.specTitle;
+      document.querySelectorAll('.card h2')[2].textContent = t.generateTitle;
+      document.querySelectorAll('.card h2')[3].textContent = t.searchTitle;
+      
+      // 更新標籤
+      document.querySelectorAll('label')[0].textContent = t.sizeLabel;
+      document.querySelectorAll('label')[1].textContent = t.colorLabel;
+      document.querySelectorAll('label')[2].textContent = t.materialLabel;
+      document.querySelectorAll('label')[3].textContent = t.roomLabel;
+      
+      // 更新按鈕文字
+      document.getElementById('analyzeBtn').textContent = t.analyzeBtn;
+      document.getElementById('generateBtn').textContent = t.generateBtn;
+      document.getElementById('searchBtn').textContent = t.searchBtn;
+      
+      // 更新上傳區域
+      const uploadP = document.querySelector('#uploadArea p');
+      uploadP.textContent = t.uploadText;
+      document.querySelector('#uploadArea p:last-of-type').textContent = t.uploadHint;
+      
+      // 更新 loading 文字
+      document.querySelector('#loading p').textContent = t.generating;
+      document.querySelector('#searchLoading p').textContent = t.searchLoading;
+      
+      // 更新搜尋說明
+      document.querySelectorAll('.card p')[3].textContent = t.searchDesc;
+      
+      // 更新 Select 選項
+      const colorSelect = document.getElementById('color');
+      colorSelect.options[0].text = t.selectColor;
+      colorSelect.options[1].text = t.colorLightGray;
+      colorSelect.options[2].text = t.colorDarkGray;
+      colorSelect.options[3].text = t.colorBeige;
+      colorSelect.options[4].text = t.colorLightBrown;
+      colorSelect.options[5].text = t.colorDarkBrown;
+      colorSelect.options[6].text = t.colorWhite;
+      colorSelect.options[7].text = t.colorBlack;
+      colorSelect.options[8].text = t.colorBlue;
+      colorSelect.options[9].text = t.colorGreen;
+      
+      const materialSelect = document.getElementById('material');
+      materialSelect.options[0].text = t.selectMaterial;
+      materialSelect.options[1].text = t.materialTile;
+      materialSelect.options[2].text = t.materialStone;
+      materialSelect.options[3].text = t.materialWood;
+      materialSelect.options[4].text = t.materialMosaic;
+      materialSelect.options[5].text = t.materialConcrete;
+      
+      const roomSelect = document.getElementById('roomType');
+      roomSelect.options[0].text = t.roomLiving;
+      roomSelect.options[1].text = t.roomBedroom;
+      roomSelect.options[2].text = t.roomBathroom;
+      roomSelect.options[3].text = t.roomKitchen;
+      roomSelect.options[4].text = t.roomDining;
+      roomSelect.options[5].text = t.roomBalcony;
+      
+      // 更新 input placeholder
+      document.getElementById('width').placeholder = t.widthPlaceholder;
+      document.getElementById('height').placeholder = t.heightPlaceholder;
+      
+      // 儲存語言到 localStorage
+      localStorage.setItem('tileAppLang', lang);
+    }
+
+    // 載入時恢復語言設定
+    window.addEventListener('load', () => {
+      const savedLang = localStorage.getItem('tileAppLang');
+      if (savedLang) {
+        document.getElementById('langSelect').value = savedLang;
+        changeLanguage(savedLang);
+      }
+    });
+
+    // ========== 以下是原本的程式碼 ==========
     let currentFilePath = '';
     
     // 上傳處理
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
     const previewImg = document.getElementById('previewImg');
+    const t = () => translations[currentLang];
     
     uploadArea.addEventListener('click', () => fileInput.click());
     uploadArea.addEventListener('dragover', (e) => {
@@ -297,7 +486,7 @@
       const formData = new FormData();
       formData.append('tileImage', file);
       
-      uploadArea.querySelector('p').textContent = '上傳中...';
+      uploadArea.querySelector('p').textContent = t().uploading;
       
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -307,7 +496,7 @@
           currentFilePath = data.filePath;
           previewImg.src = data.filePath;
           previewImg.style.display = 'block';
-          uploadArea.querySelector('p').textContent = '上傳成功！';
+          uploadArea.querySelector('p').textContent = t().uploadSuccess;
         } else {
           alert(data.error || '上傳失敗');
         }
@@ -316,7 +505,6 @@
       }
     }
     
-    // 全域變數儲存分析結果
     let savedFeatures = null;
     let savedTileInfo = null;
     
@@ -334,7 +522,7 @@
       
       const btn = document.getElementById('analyzeBtn');
       btn.disabled = true;
-      btn.textContent = '分析中...';
+      btn.textContent = t().analyzeBtnLoading;
       
       try {
         const res = await fetch('/api/analyze', {
@@ -349,14 +537,7 @@
         
         if (data.success) {
           const f = data.features;
-          // ✅ 儲存 features 到全域變數，供生成時使用
-          savedFeatures = {
-            pattern: f.pattern,
-            style: f.style,
-            mood: f.mood
-          };
-          
-          // ✅ 儲存顏色、材質、房間類型供搜尋使用
+          savedFeatures = { pattern: f.pattern, style: f.style, mood: f.mood };
           savedTileInfo = {
             color: document.getElementById('color').value,
             material: document.getElementById('material').value,
@@ -365,10 +546,10 @@
           
           document.getElementById('analyzeResult').innerHTML = `
             <div class="features-result">
-              <div class="feature-item"><span class="feature-label">花紋:</span>${f.pattern}</div>
-              <div class="feature-item"><span class="feature-label">風格:</span>${f.style}</div>
-              <div class="feature-item"><span class="feature-label">氛圍:</span>${f.mood}</div>
-              <div class="feature-item"><span class="feature-label">推薦:</span>${f.recommendedRooms.join(', ')}</div>
+              <div class="feature-item"><span class="feature-label">${t().pattern}:</span>${f.pattern}</div>
+              <div class="feature-item"><span class="feature-label">${t().style}:</span>${f.style}</div>
+              <div class="feature-item"><span class="feature-label">${t().mood}:</span>${f.mood}</div>
+              <div class="feature-item"><span class="feature-label">${t().recommend}:</span>${f.recommendedRooms.join(', ')}</div>
             </div>
           `;
           document.getElementById('generateBtn').disabled = false;
@@ -378,25 +559,18 @@
         alert('分析失敗: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.textContent = '🔍 分析磁磚特徵';
+        btn.textContent = t().analyzeBtn;
       }
     });
     
-    // 生成場景 - 使用真實的 features 資料
+    // 生成場景
     document.getElementById('generateBtn').addEventListener('click', async () => {
-      if (!currentFilePath) {
+      if (!currentFilePath || !savedFeatures) {
         alert('請先上傳磁磚並分析');
         return;
       }
       
-      if (!savedFeatures) {
-        alert('請先分析磁磚特徵');
-        return;
-      }
-      
       const roomType = document.getElementById('roomType').value;
-      
-      // ✅ 使用分析結果的真實 features
       const features = savedFeatures;
       
       document.getElementById('loading').style.display = 'block';
@@ -406,19 +580,15 @@
         const res = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tilePath: currentFilePath,
-            features,
-            roomType
-          })
+          body: JSON.stringify({ tilePath: currentFilePath, features, roomType })
         });
         const data = await res.json();
         
         if (data.success) {
           document.getElementById('generateResult').innerHTML = `
             <div class="result-area">
-              <img class="scene-img" src="${data.imageUrl}" alt="場景模擬圖">
-              <p class="success">✅ 場景生成完成！</p>
+              <img class="scene-img" src="${data.imageUrl}" alt="Scene">
+              <p class="success">${t().success}</p>
               <p style="font-size:13px;color:#666;">Prompt: ${data.prompt}</p>
             </div>
           `;
@@ -454,13 +624,13 @@
         
         if (data.success) {
           const images = data.images;
-          const modeLabel = data.mode === 'demo' ? '<p style="color:#888;font-size:13px;">⚠️ Demo 模式 - 請設定 UNSPLASH_ACCESS_KEY 以取得真實圖片</p>' : '';
+          const modeLabel = data.mode === 'demo' ? `<p style="color:#888;font-size:13px;">${t().demoWarning}</p>` : '';
           
           const galleryHtml = images.map(img => `
             <div>
-              <img src="${img.thumbUrl}" alt="${img.description || '場景圖片'}" 
+              <img src="${img.thumbUrl}" alt="${img.description || 'Scene'}" 
                    onclick="window.open('${img.regularUrl}', '_blank')"
-                   title="${img.description || '點擊查看大圖'}">
+                   title="${img.description || 'Click for larger image'}">
               <p class="photo-credit">📷 ${img.photographer}</p>
             </div>
           `).join('');
@@ -468,7 +638,7 @@
           document.getElementById('searchResult').innerHTML = `
             ${modeLabel}
             <div class="scene-gallery">${galleryHtml}</div>
-            <p style="font-size:13px;color:#666;margin-top:12px;">搜尋關鍵字: ${data.query}</p>
+            <p style="font-size:13px;color:#666;margin-top:12px;">${t().keywordSearch} ${data.query}</p>
           `;
         }
       } catch (err) {
