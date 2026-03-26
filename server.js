@@ -128,7 +128,7 @@ fastify.post('/api/analyze', async (request, reply) => {
   }
 
   const features = {
-    pattern: detectPattern(color || detectedColor),
+    pattern: detectPattern(color || detectedColor, material),
     style: inferStyle(material),
     mood: inferMood(color || detectedColor, material),
     recommendedRooms: getRecommendedRooms(material),
@@ -284,10 +284,20 @@ fastify.post('/api/search-scenes', async (request, reply) => {
 
 // ========== 輔助函數 ==========
 
-function detectPattern(color) {
-  const patterns = ['大理石紋', '木紋', '幾何', '花卉', '純色', '條紋'];
-  if (color && color.toLowerCase().includes('深')) return '大理石紋';
-  return patterns[Math.floor(Math.random() * patterns.length)];
+function detectPattern(color, material) {
+  // 基於顏色和材質推斷圖案類型
+  if (material === '石材') return '大理石紋';
+  if (material === '木材') return '木紋';
+  if (material === '馬賽克') return '馬賽克';
+  if (material === '水泥') return '水泥紋';
+  
+  // 基於顏色推斷
+  if (color) {
+    const c = color.toLowerCase();
+    if (c.includes('深') || c.includes('黑')) return '大理石紋';
+    if (c.includes('淺') || c.includes('米') || c.includes('白')) return '純色';
+  }
+  return '幾何';
 }
 
 function inferStyle(material) {
@@ -306,8 +316,9 @@ function getRecommendedRooms(material) {
 }
 
 function buildScenePrompt(features, roomType) {
-  const { pattern, style, mood } = features;
-  return `A ${roomType} with ${pattern} ${style} tile flooring or wall, ${mood} atmosphere, realistic interior photo, high quality, 8k`;
+  const { pattern, style, mood, detectedColor } = features;
+  const colorPart = detectedColor ? `${detectedColor}` : '';
+  return `A ${roomType} interior with ${colorPart} ${pattern} ${style} tile flooring, ${mood} atmosphere, realistic interior photo, high quality, 8k, detailed tiles on floor`;
 }
 
 function buildSearchKeywords(color, material, roomType) {

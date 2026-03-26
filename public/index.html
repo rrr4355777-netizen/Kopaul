@@ -679,7 +679,13 @@
         
         if (data.success) {
           const f = data.features;
-          savedFeatures = { pattern: f.pattern, style: f.style, mood: f.mood };
+          // 儲存完整的 features，包括偵測到的顏色
+          savedFeatures = { 
+            pattern: f.pattern, 
+            style: f.style, 
+            mood: f.mood,
+            detectedColor: f.detectedColor || document.getElementById('color').value
+          };
           
           // 如果有偵測到的顏色，自動選取
           if (f.detectedColor) {
