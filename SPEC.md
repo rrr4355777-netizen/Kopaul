@@ -5,7 +5,7 @@
 | 項目 | 內容 |
 |------|------|
 | 系統名稱 | Tile Scene Simulator |
-| 版本 | v2.1.0 |
+| 版本 | v3.0.0 |
 | 用途 | 上傳磁磚圖片，AI 生成室內場景模擬圖 |
 | 技術棧 | Node.js + Fastify + Replicate API |
 
@@ -33,8 +33,9 @@
 - 推薦適用房間
 
 ### 4. 生成場景模擬圖
-- 使用 Replicate API (Flux 模型)
-- 根據磁磚特徵生成室內場景
+- 使用 Replicate API (ControlNet Canny 模型)
+- 磁磚圖片作為 ControlNet 控制輸入
+- 根據磁磚邊緣結構生成室內場景
 - 支援房間類型：客廳、臥室、浴室、廚房、餐廳、陽台
 
 ### 5. 搜尋相似場景
@@ -66,6 +67,18 @@ UNSPLASH_ACCESS_KEY=xxx   # Unsplash API 金鑰 (可選)
 ---
 
 ## 版本歷史
+
+### v3.0.0 (2026-03-29)
+**重大升級：ControlNet 方案實施**
+- 更換 AI 模型為 ControlNet Canny (jagilley/controlnet-canny)
+- 磁磚圖片現在作為 ControlNet 控制輸入
+- 生成結果與磁磚高度相關
+- 修復 base64 圖片傳輸問題
+- 修復 API 參數類型錯誤 (num_samples, image_resolution 需為字串)
+
+**差異說明：**
+- v2.x: 使用 FLUX 純文字 prompt，生成結果與磁磚無關
+- v3.x: 使用 ControlNet，磁磚圖片直接影響場景生成
 
 ### v2.1.0 (2026-03-26)
 **修復問題：**

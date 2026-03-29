@@ -138,7 +138,7 @@ fastify.post('/api/analyze', async (request, reply) => {
   return { success: true, features, tileInfo: { width, height, color: detectedColor, material } };
 });
 
-// 3. 生成場景模擬圖 (使用 ControlNet Canny)
+// 3. 生成場景模擬圖
 fastify.post('/api/generate', async (request, reply) => {
   const { tilePath, features, roomType = 'living room' } = request.body;
   
@@ -148,40 +148,48 @@ fastify.post('/api/generate', async (request, reply) => {
 
   try {
     const prompt = buildScenePrompt(features, roomType);
-    const tileImagePath = path.join(__dirname, tilePath);
     
-    // === 主要方案：Replicate + ControlNet Canny ===
+    // === 主要方案：Replicate ===
     if (process.env.REPLICATE_API_TOKEN) {
-      // ControlNet Canny：將磁磚圖片作為邊緣控制，生成場景
-      const versionId = 'aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613';
+      // 使用 OpenAI Vision 分析圖片顏色
+      if (process.env.OPENAI_API_KEY && tilePath) {
+        try {
+          const imageUrl = `http://localhost:3000${tilePath}`;
+          const visionResponse = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+              model: 'gpt-4o-mini',
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Describe this tile in 2 words: what is the main color? Reply in Chinese. Examples: "淺灰色", "米白色", "深棕色"' },
+                  { type: 'image_url', image_url: { url: imageUrl } }
+                ]
+              }],
+              max_tokens: 50
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          const detectedColor = visionResponse.data.choices[0].message.content;
+          // 更新 features 中的顏色
+          features.detectedColor = detectedColor;
+        } catch (e) {
+          console.log('顏色辨識失敗:', e.message);
+        }
+      }
       
-      // 將圖片轉換為 base64 data URL
-      const imageBuffer = fs.readFileSync(tileImagePath);
-      const ext = path.extname(tileImagePath).toLowerCase();
-      const mimeTypes = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
-      const mimeType = mimeTypes[ext] || 'image/jpeg';
-      const base64Image = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
-      
-      console.log('使用 ControlNet Canny 生成場景，磁磚圖片:', tileImagePath);
-      console.log('Prompt:', prompt);
+      const versionId = 'c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e';
       
       const response = await axios.post(
         'https://api.replicate.com/v1/predictions',
         {
           version: versionId,
-          input: {
-            image: base64Image,  // 磁磚圖片作為控制圖
-            prompt: prompt,
-            a_prompt: 'good quality, highly detailed, realistic interior, professional photography',
-            n_prompt: 'bad quality, blurry, distorted, ugly, watermark, text',
-            num_samples: '1',  // 字串格式
-            image_resolution: '512',  // 字串格式
-            ddim_steps: 30,
-            scale: 9,  // 控制強度
-            eta: 0,
-            low_threshold: 100,
-            high_threshold: 200
-          }
+          input: { prompt: prompt, go_fast: true, num_outputs: 1, aspect_ratio: '16:9' }
         },
         {
           headers: {
@@ -192,25 +200,23 @@ fastify.post('/api/generate', async (request, reply) => {
       );
       
       const result = response.data;
-      console.log('Replicate 回應:', result.status);
       
-      // 等待生成完成（最多 90 秒）
+      // 等待生成完成（最多 30 秒）
       if (result.status === 'succeeded') {
-        return { success: true, imageUrl: result.output[1], prompt: prompt, provider: 'replicate-controlnet' };
+        return { success: true, imageUrl: result.output[0], prompt: prompt, provider: 'replicate' };
       } else if (result.status === 'failed') {
         return reply.code(500).send({ error: 'AI 生成失敗', detail: result.error });
       } else {
         // 輪詢等待結果
         let attempts = 0;
-        while (attempts < 45) {
+        while (attempts < 15) {
           await new Promise(r => setTimeout(r, 2000));
           try {
             const check = await axios.get(result.urls.get, {
               headers: { 'Authorization': 'Token ' + process.env.REPLICATE_API_TOKEN }
             });
             if (check.data.status === 'succeeded') {
-              // output[0] 是邊緣圖，output[1] 是生成的場景圖
-              return { success: true, imageUrl: check.data.output[1], prompt: prompt, provider: 'replicate-controlnet' };
+              return { success: true, imageUrl: check.data.output[0], prompt: prompt, provider: 'replicate' };
             } else if (check.data.status === 'failed') {
               return reply.code(500).send({ error: 'AI 生成失敗' });
             }
@@ -310,22 +316,9 @@ function getRecommendedRooms(material) {
 }
 
 function buildScenePrompt(features, roomType) {
-  const { style, mood, material } = features;
-  
-  // ControlNet prompt：專注於場景整體，邊緣由圖片決定
-  const roomDescriptions = {
-    'living room': 'modern living room interior with sofa and natural light',
-    'bedroom': 'cozy bedroom interior with warm ambient lighting',
-    'bathroom': 'modern bathroom interior with clean design',
-    'kitchen': 'modern kitchen interior with bright lighting',
-    'dining room': 'elegant dining room interior',
-    'balcony': 'outdoor balcony with city view'
-  };
-  
-  const roomDesc = roomDescriptions[roomType] || `beautiful ${roomType}`;
-  
-  // ControlNet 將根據磁磚的邊緣結構生成場景
-  return `${roomDesc}, ${style} style, ${mood} atmosphere, tile floor pattern from reference, interior design, professional photography, 8k, high quality, realistic`;
+  const { pattern, style, mood, detectedColor } = features;
+  const colorPart = detectedColor ? `${detectedColor}` : '';
+  return `A ${roomType} interior with ${colorPart} ${pattern} ${style} tile flooring, ${mood} atmosphere, realistic interior photo, high quality, 8k, detailed tiles on floor`;
 }
 
 function buildSearchKeywords(color, material, roomType) {
