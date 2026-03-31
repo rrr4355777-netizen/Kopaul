@@ -5,7 +5,7 @@
 | 項目 | 內容 |
 |------|------|
 | 系統名稱 | Tile Scene Simulator |
-| 版本 | v3.0.0 |
+| 版本 | v4.0.0 |
 | 用途 | 上傳磁磚圖片，AI 生成室內場景模擬圖 |
 | 技術棧 | Node.js + Fastify + Replicate API |
 
@@ -22,15 +22,14 @@
 | 欄位 | 選項說明 |
 |------|----------|
 | 尺寸 | 寬/高 + 單位 (cm / 平方尺 / 平方米) |
-| 顏色 | 淺灰、深灰、米白、淺棕、深棕、白色、黑色、藍色、綠色 |
-| 材質 | 瓷磚、石材、木材、馬賽克、水泥 |
+| 顏色 | 讓 AI 自動分析 或 手動選擇 |
+| 材質 | 讓 AI 自動分析 或 手動選擇 |
 
-### 3. AI 特徵分析
-- 使用 OpenAI Vision API 分析圖片顏色
-- 推斷圖案花紋 (pattern)
-- 推斷風格 (style)
-- 推斷氛圍 (mood)
-- 推薦適用房間
+### 3. AI 深度分析
+- 使用 OpenAI Vision API 進行全面分析
+- 識別顏色、材質、紋理類型、風格
+- 計算 AI 信心度
+- 自動推薦適用房間與場景風格
 
 ### 4. 生成場景模擬圖
 - 使用 Replicate API (ControlNet Canny 模型)
@@ -67,6 +66,15 @@ UNSPLASH_ACCESS_KEY=xxx   # Unsplash API 金鑰 (可選)
 ---
 
 ## 版本歷史
+
+### v4.0.0 (2026-03-31)
+**重大重構：智慧分析 + 場景推薦 + ControlNet**
+- 新增深度磁磚分析 (OpenAI Vision JSON 格式)
+- 新增場景推薦系統 (基於顏色/材質/紋理)
+- 支援 6 種場景風格 (現代簡約/北歐/工業/奢華/日式/地中海)
+- 新增進階控制面板 (ControlNet 強度/生成步數)
+- 重構前端 UI (Tailwind CSS)
+- 新增 API: /api/analyze, /api/recommend, /api/generate-multiple
 
 ### v3.0.0 (2026-03-29)
 **重大升級：ControlNet 方案實施**
